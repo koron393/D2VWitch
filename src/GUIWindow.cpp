@@ -656,7 +656,11 @@ GUIWindow::GUIWindow(QSettings &_settings, QWidget *parent)
         d2v_edit->setText(file_name);
     });
 
+#ifdef USE_QT6
+    connect(video_group, static_cast<void (QButtonGroup::*)(int, bool)>(&QButtonGroup::idToggled), [this] (int id, bool checked) {
+#else
     connect(video_group, static_cast<void (QButtonGroup::*)(int, bool)>(&QButtonGroup::buttonToggled), [this] (int id, bool checked) {
+#endif
         // "int id" is the QButtonGroup id, not AVStream::id
 
         if (checked) {

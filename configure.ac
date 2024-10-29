@@ -23,17 +23,29 @@ PKG_CHECK_MODULES([libavcodec], [libavcodec])
 PKG_CHECK_MODULES([libavformat], [libavformat])
 PKG_CHECK_MODULES([libavutil], [libavutil])
 
+PKG_CHECK_MODULES(
+    [QT6WIDGETS], [Qt6Widgets], [qt6_enabled="yes"],
+        [
+         PKG_CHECK_MODULES([QT5WIDGETS], [Qt5Widgets], [qt6_enabled="no"])
+        ]
+)
 
-qt_host_bins="$( eval $PKG_CONFIG --variable=host_bins Qt5Core )"
-
-PKG_CHECK_MODULES([QT5WIDGETS], [Qt5Widgets])
+if test "x$qt6_enabled" = "xyes"; then
+    qt_host_bins="$( eval $PKG_CONFIG --variable=host_bins Qt6Core )"
+else
+    qt_host_bins="$( eval $PKG_CONFIG --variable=host_bins Qt5Core )"
+fi
 
 AC_ARG_WITH(
             [moc],
             [AS_HELP_STRING([--with-moc], [Path of the Qt meta object compiler.])],
             [AC_SUBST([MOC], [$with_moc])],
             [
-             AC_PATH_PROGS([MOC], [moc-qt5 moc], [not_found], [$qt_host_bins])
+             if test "x$qt6_enabled" = "xyes"; then
+                 AC_PATH_PROGS([MOC], [moc-qt6 moc], [not_found], [$qt_host_bins])
+             else
+                 AC_PATH_PROGS([MOC], [moc-qt5 moc], [not_found], [$qt_host_bins])
+             fi
              AS_IF(
                    [test "x$MOC" = "x$not_found"],
                    [AC_MSG_ERROR(["moc (Qt's meta object compiler) was not found."])]
@@ -41,18 +53,31 @@ AC_ARG_WITH(
             ]
 )
 
-AC_MSG_CHECKING([whether Qt is static])
-if [ `$PKG_CONFIG --variable=qt_config Qt5Core | $GREP 'static' > /dev/null` ]; then
-    static_qt="yes"
+if test "x$qt6_enabled" = "xyes"; then
+    AC_MSG_CHECKING([whether Qt is static])
+    if [ `$PKG_CONFIG --variable=qt_config Qt6Core | $GREP 'static' > /dev/null` ]; then
+        static_qt="yes"
+    else
+        static_qt="no"
+    fi
 else
-    static_qt="no"
+    AC_MSG_CHECKING([whether Qt is static])
+    if [ `$PKG_CONFIG --variable=qt_config Qt5Core | $GREP 'static' > /dev/null` ]; then
+        static_qt="yes"
+    else
+        static_qt="no"
+    fi
 fi
 AC_MSG_RESULT([$static_qt])
 
 AS_IF(
       [test "x$static_qt" = "xyes"],
       [
-       PKG_CHECK_MODULES([QT5PLATFORMSUPPORT], [Qt5PlatformSupport])
+       if test "x$qt6_enabled" = "xyes"; then
+           PKG_CHECK_MODULES([QT6PLATFORMSUPPORT], [Qt6PlatformSupport])
+       else
+           PKG_CHECK_MODULES([QT5PLATFORMSUPPORT], [Qt5PlatformSupport])
+       fi
        AC_DEFINE([D2VWITCH_STATIC_QT])
       ]
 )
@@ -70,7 +95,11 @@ AS_CASE(
 
          AS_IF([test "x$static_qt" = "xyes"],
                [
-                AC_SUBST([QT5PLATFORMPLUGIN], ["$qt_host_bins/../plugins/platforms/libqwindows.a"])
+                if test "x$qt6_enabled" = "xyes"; then
+                    AC_SUBST([QT6PLATFORMPLUGIN], ["$qt_host_bins/../plugins/platforms/libqwindows.a"])
+                else
+                    AC_SUBST([QT5PLATFORMPLUGIN], ["$qt_host_bins/../plugins/platforms/libqwindows.a"])
+                fi
                ]
          )
         ]

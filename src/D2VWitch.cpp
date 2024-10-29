@@ -641,7 +641,11 @@ int main(int argc, char **_argv) {
 
             if (index > -1) {
                 for (int i = index + 1; i < entries.size(); i++) {
+#ifdef USE_QT6
+                    if (entries[i].mid(4, 2) == name.mid(4, 2))
+#else
                     if (entries[i].midRef(4, 2) == name.midRef(4, 2))
+#endif
                         fake_file.push_back(input_dir.absoluteFilePath(entries[i]).toStdString());
                 }
             }
